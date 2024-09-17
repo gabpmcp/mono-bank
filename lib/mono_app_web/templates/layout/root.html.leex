@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MonoBank</title>
+  <%= csrf_meta_tag() %>
+  <%= live_title_tag(assigns[:page_title] || "MonoBank")%>
+  <%= live_view_tag(@conn) %>
+</head>
+<body>
+  <%= @inner_content %>
+</body>
+</html>

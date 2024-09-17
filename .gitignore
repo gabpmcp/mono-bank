@@ -1,10 +1,27 @@
+# Directorios generados por Elixir y Mix
 /_build
-/cover
 /deps
-/doc
-/.fetch
-erl_crash.dump
-*.ez
+
+# Archivos generados por el compilador Erlang
 *.beam
-/config/*.secret.exs
-.elixir_ls/
+
+# Archivos de configuración específicos del entorno
+*.exs~
+
+# Archivos temporales de editores y sistemas operativos
+.DS_Store
+*.swp
+*.tmp
+
+# Directorios y archivos de herramientas de desarrollo
+/.idea
+/.vscode
+*.sublime-workspace
+*.sublime-project
+
+# Cobertura de pruebas
+/cover/
+
+# Otros archivos generados
+*.log
+*.lock

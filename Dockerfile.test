@@ -1,0 +1,67 @@
+# Etapa 1: Build de la aplicación
+FROM elixir:1.17.2-alpine AS build
+
+# Configurar repositorios de Alpine y evitar dependencias innecesarias
+RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://alpine.northrepo.ca|g' /etc/apk/repositories
+
+# Instalar dependencias necesarias para compilar Elixir, Phoenix y esbuild en una sola capa
+RUN apk add --no-cache \
+    build-base \
+    git \
+    npm \
+    libc6-compat \
+    bash \
+    libstdc++ \
+    libgcc \
+    && mix local.hex --force \
+    && mix local.rebar --force
+
+# Establecer directorio de trabajo
+WORKDIR /app
+
+# Copiar mix.exs y mix.lock para aprovechar el cache de dependencias
+COPY mix.exs mix.lock ./
+
+# Instalar dependencias del proyecto
+RUN MIX_ENV=prod mix deps.get
+
+# Compilar la aplicación para producción
+RUN MIX_ENV=prod mix compile
+
+# Manejo de assets
+COPY assets/package.json assets/package-lock.json ./assets/
+RUN npm install --prefix ./assets && npm install esbuild --platform=linuxmusl --prefix ./assets
+
+# Copiar y compilar los archivos de assets
+COPY assets/ ./assets/
+RUN MIX_ENV=prod mix phx.digest
+
+# Copiar el código de la aplicación y generar el release
+COPY . .
+RUN MIX_ENV=prod mix release
+
+# Eliminar cachés temporales
+RUN rm -rf /root/.hex /root/.cache
+
+# Etapa 2: Imagen para producción
+FROM alpine:3.18 AS app
+
+# Instalar solo las dependencias necesarias para ejecutar la aplicación
+RUN apk add --no-cache \
+    openssl \
+    ncurses-libs \
+    bash \
+    libstdc++ \
+    libgcc
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar el release generado en la etapa anterior
+COPY --from=build /app/_build/prod/rel/mono_app ./
+
+# Exponer el puerto de Phoenix
+EXPOSE 4000
+
+# Ejecutar migraciones y arrancar la aplicación
+CMD ["sh", "-c", "bin/mono_app eval \"MonoApp.Release.migrate\" && bin/mono_app start"]

@@ -1,0 +1,11 @@
+<div>
+  <h1>Transactions</h1>
+
+  <button phx-click="refresh">Refresh</button>
+
+  <ul>
+    <%= for transaction <- @transactions do %>
+      <li><%= transaction.amount %> - <%= transaction.description %></li>
+    <% end %>
+  </ul>
+</div>
