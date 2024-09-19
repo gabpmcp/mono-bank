@@ -44,8 +44,12 @@ COPY . .
 # Compilar la aplicación y generar digests de assets
 RUN mix do compile, phx.digest
 
+# Paso de Diagnóstico: Verificar la existencia del directorio .mix y mix.exs
+RUN ls -la /opt/app/.mix || echo "Directorio .mix no encontrado."
+RUN ls -la /opt/app/mix.exs || echo "mix.exs no encontrado en /opt/app"
+
 # Etapa 3: Imagen Final para Producción
-FROM elixir:1.15.0-slim as app
+FROM elixir:1.15.0-slim AS app  
 
 # Exponer el puerto de la aplicación
 EXPOSE 4000
@@ -61,6 +65,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Crear un usuario no root llamado 'default'
+RUN addgroup --system default && adduser --system --ingroup default default
+
 # Copiar los artefactos compilados desde la etapa de construcción
 COPY --from=phx-builder /opt/app/_build /opt/app/_build
 COPY --from=phx-builder /opt/app/priv /opt/app/priv
@@ -69,7 +76,10 @@ COPY --from=phx-builder /opt/app/lib /opt/app/lib
 COPY --from=phx-builder /opt/app/deps /opt/app/deps
 COPY --from=phx-builder /opt/app/mix.* /opt/app/
 
-# Definir el usuario por defecto
+# Paso de Diagnóstico: Verificar la existencia de mix.exs en la imagen final
+RUN ls -la /opt/app/mix.exs || echo "mix.exs no encontrado en la imagen final"
+
+# Cambiar al usuario 'appuser'
 USER default
 
 # Comando para iniciar la aplicación

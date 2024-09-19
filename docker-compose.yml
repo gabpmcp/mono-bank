@@ -1,6 +1,7 @@
 services:
   web:
     image: mono_app
+    # build: .
     pull_policy: never
     ports:
       - "4000:4000"
