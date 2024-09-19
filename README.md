@@ -16,3 +16,8 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 * Docs: <https://hexdocs.pm/phoenix>
 * Forum: <https://elixirforum.com/c/phoenix-forum>
 * Source: <https://github.com/phoenixframework/phoenix>
+
+## Recompile
+
+`mix do clean, compile && cd assets && rm -rf node_modules package-lock.json && npm i && npm run build && cd .. && mix phx.digest && docker build -t mono_app:latest .`
+`docker-compose up --force-recreate --remove-orphans`

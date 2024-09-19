@@ -1,27 +1,37 @@
-# Directorios generados por Elixir y Mix
-/_build
-/deps
+# Directorios generados por Elixir
+/_build/
+/deps/
+/*.ez
 
-# Archivos generados por el compilador Erlang
+# Archivos de compilación de Elixir
 *.beam
 
-# Archivos de configuración específicos del entorno
-*.exs~
+# Archivos y directorios de Phoenix
+/priv/static/assets/
+/priv/static/cache_manifest.json
 
-# Archivos temporales de editores y sistemas operativos
+# Archivos generados por Node.js (si usas Node para gestionar assets)
+ /assets/node_modules/
+/assets/brunch-config.js
+/assets/package-lock.json
+/assets/yarn.lock
+
+# Archivos de configuración de herramientas de desarrollo
+/.elixir_ls/
+/.vscode/
+/.idea/
+/*.sublime-project
+/*.sublime-workspace
+
+# Archivos temporales del sistema operativo
 .DS_Store
+Thumbs.db
+
+# Archivos temporales de editores
+*~
 *.swp
-*.tmp
+*.swo
 
-# Directorios y archivos de herramientas de desarrollo
-/.idea
-/.vscode
-*.sublime-workspace
-*.sublime-project
-
-# Cobertura de pruebas
-/cover/
-
-# Otros archivos generados
-*.log
-*.lock
+# Logs y otros archivos de runtime
+/log/
+/tmp/

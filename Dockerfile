@@ -1,75 +1,76 @@
-# Etapa 1: Construcción de la aplicación
-FROM elixir:1.17.2-slim AS build
+# Etapa 1: Construcción de Assets (Frontend) usando una imagen de Node.js compatible
+FROM node:18-bullseye AS assets-builder
 
-# Establecer variables de entorno para evitar diálogos interactivos
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Actualizar el sistema e instalar dependencias necesarias
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    git \
-    npm \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Establecer directorio de trabajo
-WORKDIR /app
-
-# Copiar archivos mix para instalar dependencias
-COPY mix.exs mix.lock ./
-
-# Instalar Hex y Rebar sin verificación de repositorios
-RUN mix local.hex --force && mix local.rebar --force
-
-# Instalar las dependencias del proyecto
-RUN MIX_ENV=prod mix deps.get
-
-# Copiar el código de la aplicación
-COPY . .
-
-# Compilar la aplicación para producción
-RUN MIX_ENV=prod mix compile
-
-# Manejo de assets (JavaScript, CSS)
+# Establecer el directorio de trabajo
 WORKDIR /app/assets
-RUN npm install
+
+# Copiar solo package.json para aprovechar la caché de Docker
+COPY assets/package.json ./
+
+# Limpiar la caché de npm para evitar posibles conflictos
+RUN npm cache clean --force
+
+# Instalar las dependencias de Node.js
+RUN npm install --no-progress --verbose
+
+# Verificar la instalación de esbuild
+RUN npx esbuild --version
+
+# Copiar el resto de los assets
+COPY assets/ .
+
+# Construir los assets frontend
 RUN npm run build
 
-# Volver al directorio de la aplicación
-WORKDIR /app
+# Etapa 2: Construcción de la Aplicación Elixir (Backend)
+FROM elixir:1.15.0 AS phx-builder
 
-# Generar los archivos estáticos de Phoenix
-RUN MIX_ENV=prod mix phx.digest
+# Establecer el directorio de trabajo
+WORKDIR /opt/app
 
-# Generar el release de la aplicación incluyendo ERTS
-RUN MIX_ENV=prod mix release --no-tar --include-erts
+# Instalar Hex y Rebar
+RUN mix local.hex --force && \
+    mix local.rebar --force
 
-# Etapa 2: Imagen para producción
-FROM debian:bullseye-slim AS app
+# Copiar archivos de configuración de Elixir
+COPY mix.exs mix.lock ./
 
-# Establecer variables de entorno para evitar diálogos interactivos
-ENV DEBIAN_FRONTEND=noninteractive
+# Instalar las dependencias de Elixir
+RUN mix do deps.get, deps.compile
 
-# Instalar dependencias necesarias para ejecutar la aplicación
-RUN apt-get update && apt-get install -y \
-    openssl \
-    bash \
-    libncurses5 \
-    locales \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Copiar el resto del código de la aplicación
+COPY . .
 
-# Configurar locale
-ENV LANG=C.UTF-8
+# Compilar la aplicación y generar digests de assets
+RUN mix do compile, phx.digest
 
-# Establecer directorio de trabajo
-WORKDIR /app
+# Etapa 3: Imagen Final para Producción
+FROM elixir:1.15.0-slim as app
 
-# Copiar el release generado en la etapa anterior
-COPY --from=build /app/_build/prod/rel/mono_app ./
-
-# Exponer el puerto donde Phoenix escuchará
+# Exponer el puerto de la aplicación
 EXPOSE 4000
 
-# Ejecutar migraciones al iniciar el contenedor y luego iniciar la aplicación
-CMD ["sh", "-c", "./bin/mono_app eval \"MonoApp.Release.migrate\" && ./bin/mono_app start"]
+# Configurar variables de entorno
+ENV PORT=4000 \
+    MIX_ENV=prod \
+    LANG=C.UTF-8
+
+# Instalar dependencias de runtime necesarias
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar los artefactos compilados desde la etapa de construcción
+COPY --from=phx-builder /opt/app/_build /opt/app/_build
+COPY --from=phx-builder /opt/app/priv /opt/app/priv
+COPY --from=phx-builder /opt/app/config /opt/app/config
+COPY --from=phx-builder /opt/app/lib /opt/app/lib
+COPY --from=phx-builder /opt/app/deps /opt/app/deps
+COPY --from=phx-builder /opt/app/mix.* /opt/app/
+
+# Definir el usuario por defecto
+USER default
+
+# Comando para iniciar la aplicación
+CMD ["mix", "phx.server"]
