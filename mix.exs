@@ -9,7 +9,18 @@ defmodule MonoApp.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      releases: releases()
+    ]
+  end
+
+  # Configuración de releases
+  defp releases do
+    [
+      mono_app: [
+        include_executables_for: [:unix],
+        applications: [mono_app: :permanent]
+      ]
     ]
   end
 
