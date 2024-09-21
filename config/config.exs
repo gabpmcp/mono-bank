@@ -13,6 +13,8 @@ config :mono_app,
 
 # Configures the endpoint
 config :mono_app, MonoAppWeb.Endpoint,
+  http: [port: {:system, "PORT"}],
+  secret_key_base: System.get_env("SECRET_KEY_BASE"),
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [

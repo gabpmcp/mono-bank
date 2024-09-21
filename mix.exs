@@ -5,7 +5,7 @@ defmodule MonoApp.MixProject do
     [
       app: :mono_app,
       version: "0.1.0",
-      elixir: "~> 1.15.0",
+      elixir: "~> 1.17.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),

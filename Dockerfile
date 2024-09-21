@@ -23,7 +23,7 @@ COPY assets/ .
 RUN npm run build
 
 # Etapa 2: Construcción de la Aplicación Elixir (Backend)
-FROM elixir:1.15.0 AS phx-builder
+FROM elixir:1.17.2 AS phx-builder
 
 # Establecer la variable de entorno MIX_ENV
 ENV MIX_ENV=prod
@@ -50,13 +50,16 @@ RUN mix do compile, phx.digest
 # Generar el release
 RUN mix release
 
+# Verificar que el release se generó correctamente
+RUN ls -la /opt/app/_build/prod/rel/mono_app || echo "El release no se generó correctamente."
+
 # Etapa 3: Imagen Final para Producción
 FROM debian:bullseye-slim AS app
 
 # Configurar variables de entorno
 ENV PORT=4000 \
-    MIX_ENV=prod \
-    LANG=C.UTF-8
+    LANG=C.UTF-8 \
+    REPLACE_OS_VARS=true
 
 # Instalar dependencias de runtime necesarias
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -69,9 +72,6 @@ WORKDIR /app
 
 # Copiar el release desde la etapa de construcción
 COPY --from=phx-builder /opt/app/_build/prod/rel/mono_app ./
-
-# Verificar que el release existe
-RUN ls -la /opt/app/_build/prod/rel/mono_app || echo "El release no se generó correctamente."
 
 # Crear un usuario no root y cambiar la propiedad de los archivos
 RUN useradd -ms /bin/bash app && \
