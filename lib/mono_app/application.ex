@@ -20,7 +20,7 @@ defmodule MonoApp.Application do
       # Start to serve requests, typically the last entry
       MonoAppWeb.Endpoint,
       {DynamicSupervisor, strategy: :one_for_one, name: MonoApp.DynamicSupervisor},
-      MonoApp.KafkaConnector
+      MonoApp.KafkaProducer
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

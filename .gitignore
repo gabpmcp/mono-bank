@@ -35,3 +35,47 @@ Thumbs.db
 # Logs y otros archivos de runtime
 /log/
 /tmp/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build output
+dist/
+build/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+logs/**/*.log
+
+# Temporary files
+temp/
+tmp/
+.DS_Store
+
+# Coverage directory
+coverage/
+
+# IDE specific files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Operating system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

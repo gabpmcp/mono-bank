@@ -1,84 +1,48 @@
-# Etapa 1: Construcción de Assets (Frontend) usando una imagen de Node.js compatible
+# Etapa 1: Construcción de Assets (Frontend)
 FROM node:18-bullseye AS assets-builder
-
-# Establecer el directorio de trabajo
 WORKDIR /app/assets
-
-# Copiar solo package.json para aprovechar la caché de Docker
 COPY assets/package.json ./
-
-# Limpiar la caché de npm para evitar posibles conflictos
-RUN npm cache clean --force
-
-# Instalar las dependencias de Node.js
-RUN npm install --no-progress --verbose
-
-# Verificar la instalación de esbuild
-RUN npx esbuild --version
-
-# Copiar el resto de los assets
+RUN npm cache clean --force && npm install --no-progress --verbose
 COPY assets/ .
-
-# Construir los assets frontend
 RUN npm run build
+RUN ls -la /app/assets/priv/static || echo "Assets no generados correctamente en /app/assets/priv/static"
 
 # Etapa 2: Construcción de la Aplicación Elixir (Backend)
 FROM elixir:1.17.2 AS phx-builder
-
-# Establecer la variable de entorno MIX_ENV
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential git curl && rm -rf /var/lib/apt/lists/*
 ENV MIX_ENV=prod
-
-# Establecer el directorio de trabajo
 WORKDIR /opt/app
-
-# Instalar Hex y Rebar
-RUN mix local.hex --force && \
-    mix local.rebar --force
-
-# Copiar archivos de configuración de Elixir
+RUN mix local.hex --force && mix local.rebar --force
 COPY mix.exs mix.lock ./
-
-# Instalar las dependencias de Elixir
-RUN mix do deps.get, deps.compile
-
-# Copiar el resto del código de la aplicación
+RUN MIX_ENV=prod mix do deps.get, deps.compile
 COPY . .
-
-# Compilar la aplicación y generar digests de assets
-RUN mix do compile, phx.digest
+RUN MIX_ENV=prod mix do compile, phx.digest
 
 # Generar el release
-RUN mix release
+RUN MIX_ENV=prod mix release
 
-# Verificar que el release se generó correctamente
+# Verificar la estructura del release
 RUN ls -la /opt/app/_build/prod/rel/mono_app || echo "El release no se generó correctamente."
+RUN ls -la /opt/app/_build/prod/rel/mono_app/bin/ || echo "El directorio 'bin' no fue generado."
 
 # Etapa 3: Imagen Final para Producción
-FROM debian:bullseye-slim AS app
+FROM debian:bookworm-slim AS app
+ENV PORT=4000 LANG=C.UTF-8 REPLACE_OS_VARS=true PHX_SERVER=true
+RUN apt-get update && apt-get install -y --no-install-recommends openssl libstdc++6 libc6 ncurses-base ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /opt/app
 
-# Configurar variables de entorno
-ENV PORT=4000 \
-    LANG=C.UTF-8 \
-    REPLACE_OS_VARS=true
-
-# Instalar dependencias de runtime necesarias
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
-    ncurses-base \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copiar el release desde la etapa de construcción
+# Copiar el release generado desde la etapa anterior
 COPY --from=phx-builder /opt/app/_build/prod/rel/mono_app ./
 
+# Verificar que el release fue copiado correctamente
+RUN ls -la /opt/app/ || echo "Directorio /opt/app vacío o incompleto."
+RUN ls -la /opt/app/config/ || echo "Directorio /opt/app/config/ vacío o incompleto."
+RUN cat /opt/app/mix.exs || echo "mix.exs no encontrado o vacío."
+RUN ls -la /opt/app/bin/ || echo "El directorio 'bin' no fue copiado correctamente."
+
 # Crear un usuario no root y cambiar la propiedad de los archivos
-RUN useradd -ms /bin/bash app && \
-    chown -R app:app /app
-
+RUN useradd -ms /bin/bash app && chown -R app:app /opt/app
 USER app
-
 EXPOSE 4000
 
 # Comando para iniciar la aplicación

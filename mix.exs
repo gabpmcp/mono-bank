@@ -30,7 +30,7 @@ defmodule MonoApp.MixProject do
   def application do
     [
       mod: {MonoApp.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :phoenix, :phoenix_pubsub]
     ]
   end
 

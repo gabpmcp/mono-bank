@@ -14,7 +14,15 @@ config :mono_app, MonoAppWeb.Endpoint,
   root: ".",
   version: Application.spec(:mono_app, :vsn)
 
-config :kafka_broker, brokers: [{"kafka", 9092}]
+config :kafka_broker,
+  brokers: [
+    {System.get_env("KAFKA_HOST") || "kafka",
+     String.to_integer(System.get_env("KAFKA_PORT") || "9092")}
+  ]
+
+config :mono_app, :kafka,
+  host: System.get_env("KAFKA_HOST") || "kafka",
+  port: String.to_integer(System.get_env("KAFKA_PORT") || "9092")
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: MonoApp.Finch

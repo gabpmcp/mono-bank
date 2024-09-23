@@ -2,10 +2,10 @@ import Config
 
 # Configure your database
 config :mono_app, MonoApp.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
+  username: "mono_role",
+  password: "mono_role",
   database: "mono_app_dev",
+  hostname: "localhost",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

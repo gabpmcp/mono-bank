@@ -64,7 +64,7 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 config :kafka_ex,
-  brokers: [{"localhost", 9092}],
+  brokers: [{"kafka", 9092}],
   consumer_group: "transaction_consumers",
   sync_timeout: 3000
 

@@ -1,3 +1,6 @@
+IO.puts("Cargando configuración en runtime.exs")
+IO.inspect(System.get_env(), label: "Variables de Entorno")
+
 import Config
 
 # config/runtime.exs is executed for all environments, including
@@ -17,7 +20,10 @@ import Config
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
+  IO.puts("PHX_SERVER está habilitado")
   config :mono_app, MonoAppWeb.Endpoint, server: true
+else
+  IO.puts("PHX_SERVER no está habilitado")
 end
 
 if config_env() == :prod do
@@ -61,9 +67,17 @@ if config_env() == :prod do
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
-      port: port
+      port: port,
+      url: [host: System.get_env("PHX_HOST") || "localhost", port: 80],
+      cache_static_manifest: "priv/static/cache_manifest.json",
+      secret_key_base: System.get_env("SECRET_KEY_BASE"),
+      server: true
     ],
     secret_key_base: secret_key_base
+
+  config :mono_app, :kafka,
+    host: System.get_env("KAFKA_HOST") || "kafka",
+    port: String.to_integer(System.get_env("KAFKA_PORT") || "9092")
 
   # ## SSL Support
   #
