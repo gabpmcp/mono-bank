@@ -29,6 +29,10 @@ config :mono_app, MonoAppWeb.Endpoint,
     tailwind: {Tailwind, :install_and_run, [:mono_app, ~w(--watch)]}
   ]
 
+config :mono_app, :kafka,
+  host: System.get_env("KAFKA_HOST") || "kafka",
+  port: String.to_integer(System.get_env("KAFKA_PORT") || "9092")
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed
